@@ -471,13 +471,15 @@ Tetris.rotate_ccw = function (game) {
     return R.mergeRight(game, {"current_tetromino": new_rotation});
 };
 
-const descend = function (game) {
+const descend = function (game,points = 0) {
     const new_position = [game.position[0], game.position[1] + 1];
     if (is_blocked(game.field, game.current_tetromino, new_position)) {
         return game;
     }
-    return R.mergeRight(game, {"position": new_position});
+    game = R.mergeRight(game, { "position": new_position });
+    return R.mergeRight(game, {"score": Score.add_points(game.score, points)});
 };
+
 
 /**
  * Attempt to perform a soft drop, where the piece descends one position.
@@ -492,7 +494,7 @@ Tetris.soft_drop = function (game) {
     if (Tetris.is_game_over(game)) {
         return game;
     }
-    return descend(game);
+    return descend(game,1);
 };
 
 /**
@@ -509,7 +511,7 @@ Tetris.hard_drop = function (game) {
     if (Tetris.is_game_over(game)) {
         return game;
     }
-    const dropped_once = descend(game);
+    const dropped_once = descend(game,2);
     if (R.equals(game, dropped_once)) {
         return Tetris.next_turn(game);
     }
@@ -532,11 +534,14 @@ const lock = function (game) {
 
 const is_complete_line = (line) => !line.some((block) => block === empty_block);
 
+
 const pad_field = function (short_field) {
     const missing_row_count = Tetris.field_height - short_field.length;
     const new_rows = R.times(new_line, missing_row_count);
     return [...new_rows, ...short_field];
 };
+
+
 
 const clear_lines = R.pipe(
     R.reject(is_complete_line),
@@ -582,11 +587,12 @@ Tetris.next_turn = function (game) {
     // Otherwise, we can't descend and we've not lost,
     // So lock the current piece in place and deploy the next.
     const locked_field = lock(game);
-
+    const num_clear_lines = R.count(is_complete_line, locked_field);
+    game.score = Score.cleared_lines(num_clear_lines, game.score);
     const cleared_field = clear_lines(locked_field);
 
     const [next_tetromino, bag] = game.bag();
-
+   
     return {
         "bag": bag,
         "current_tetromino": game.next_tetromino,
@@ -596,6 +602,7 @@ Tetris.next_turn = function (game) {
         "position": starting_position,
         "score": game.score
     };
+    
 };
 
 /**

@@ -2,6 +2,8 @@ import R from "./ramda.js";
 import Tetris from "./Tetris.js";
 import Score from "./Score.js";
 
+
+
 const grid_columns = Tetris.field_width;
 const grid_rows = Tetris.field_height;
 
@@ -30,7 +32,6 @@ const cells = R.range(0, grid_rows).map(function () {
 });
 
 const update_grid = function () {
-
     // First display the grid of locked in blocks
     game.field.forEach(function (line, line_index) {
         line.forEach(function (block, column_index) {
@@ -72,8 +73,14 @@ const update_grid = function () {
     );
 
     // Add code below to display the score information.
+    const score = game.score.score;
+    const linesCleared = game.score.lines_cleared;
+    const level = Score.level(game.score);
 
-};
+    document.getElementById("current_score").textContent = score;
+    document.getElementById("lines_cleared").textContent = linesCleared;
+    document.getElementById("current_level").textContent = level;
+};  
 
 // Don't allow the player to hold down the rotate key.
 let key_locked = false;
@@ -105,7 +112,8 @@ document.body.onkeydown = function (event) {
 const timer_function = function () {
     game = Tetris.next_turn(game);
     update_grid();
-    setTimeout(timer_function, 500);
+    const timer =  2500/(Score.level(game.score)+4);
+    setTimeout(timer_function,timer);
 };
 
 // This first timeout starts the game. it's only called once.
