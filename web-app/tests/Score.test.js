@@ -110,12 +110,11 @@ describe("Score", function () {
         `A triple line clear scores 500 × level`,
         function () {
             let game = example_game;
+            const new_game = game;
             // Set up the initial game state so that three lines can be cleared
-            game.field[16] = ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-"];
-            game.field[17] = ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-"];
-            game.field[18] = ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-"];
+            game.field[18] = [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "];
             game.current_tetromino = Tetris.I_tetromino;
-      
+            game = Tetris.rotate_ccw(game);
             // Simulate dropping the tetromino
             R.range(0, 22).forEach(function () {
                 game = Tetris.next_turn(game);
@@ -132,6 +131,8 @@ describe("Score", function () {
         `A tetris scores 800 × level`,
         function () {
             let game = example_game;
+            //Set up the game field to the original setting
+            game.field[18] = ["S", "S", "S", "Z", " ", "I", "O", "O", "J", "J"];
             game.current_tetromino = Tetris.I_tetromino;
             game = Tetris.rotate_ccw(game); // Place I-tetromino
             R.range(0, 22).forEach(function () {
@@ -161,26 +162,19 @@ describe("Score", function () {
             if (game.score.score !== updateScore) {
                 throw new Error("Expecting 4 lines to clear resulting in 800 points");
             }
-    
-            // Reset the game properties for back-to-back Tetris
-            let new_game = example_game;
-            new_game.score.last_clear_tetris = true; // Reset the lines cleared
+            game.field[18] = ["S", "S", "S", "Z", " ", "I", "O", "O", "J", "J"];
+            game.field[19] = ["T", "S", "Z", "Z", " ", "I", "O", "O", "J", "J"];
+            game.field[20] = ["T", "T", "Z", "L", " ", "I", "O", "O", "J", "J"];
+            game.field[21] = ["T", "L", "L", "L", " ", "I", "O", "O", "J", "J"];
+            game.score.lines_cleared = 0;
+            game.current_tetromino = Tetris.I_tetromino;
+            game = Tetris.rotate_ccw(game);
             updateScore += 400;
-    
-            // Place the second I-tetromino for back-to-back Tetris
-            new_game.current_tetromino = Tetris.I_tetromino;
-            new_game = Tetris.rotate_ccw(new_game);
-    
-            // Simulate clearing the lines for the second Tetris
             R.range(0, 22).forEach(function () {
-                new_game = Tetris.next_turn(new_game);
+                game = Tetris.next_turn(game);
             });
-    
-            // Check if it's back-to-back Tetrises and the score is 1200 points
-            console.log("score", new_game.score.score);
-            console.log(new_game.score.lines_cleared);
-            // Check if it's back-to-back Tetrises by comparing lines cleared with the first Tetris
-            if (new_game.score.score !== updateScore) {
+            game.score.score = game.score.score - 800; //This is needed as the score is intially 800 from the first tetris clear
+            if ((game.score.score) !== updateScore) {
                 throw new Error("Expecting back-to-back Tetrises to score 1200 points");
             }
         }
@@ -192,9 +186,10 @@ describe("Score", function () {
         function () {
             let game = example_game;
             // Set up the game state to perform a soft drop.
+            //O tetromino is used as it does not not clear a single line
             game.current_tetromino = Tetris.I_tetromino;
             game = Tetris.rotate_ccw(game);
-
+            const intialScore = 800;
             // Simulate continuous soft dropping until the tetromino reaches the bottom
             R.range(0, 22).forEach(function () {
                 game = Tetris.soft_drop(game);
@@ -202,8 +197,8 @@ describe("Score", function () {
             });
 
             // Calculate the number of cells descended
-            const cellsDescended = 20; // Assuming the I is a vertical tetromino and descends 20 cells
-            const expectedScore = 800 + cellsDescended * 1; // // Expected score as I tetromino clears 4 lines
+            const cellsDescended = 20; // Assuming the I is vertical tetromino descends 20 cells
+            const expectedScore = intialScore + cellsDescended * 1; //Expected score as I tetromino clears 4 lines
             console.log(game.score.score,expectedScore);
             if (game.score.score !== expectedScore) {
                 throw new Error("Soft drop should score 1 point per cell descended");
@@ -220,14 +215,16 @@ describe("Score", function () {
         `A hard drop scores 2 points per cell descended`,
         function () {
             let game = example_game;
+            console.log(game.field);
             // Set up the game state to perform a hard drop.
             game.current_tetromino = Tetris.I_tetromino;
             game = Tetris.rotate_ccw(game);
+            const intialScore = 800;
             game = Tetris.hard_drop(game); // Perform a hard drop
         
             // Calculate the number of cells descended
-            const cellsDescended = 20; // Assuming the I is vertical tetromino descends 2 cells
-            const expectedScore = 800+ cellsDescended * 2; // Expected score as I tetromino clears 4 lines
+            const cellsDescended = 20; // Assuming the I is vertical tetromino descends 20 cells
+            const expectedScore =  intialScore + cellsDescended * 2; // Expected score as I tetromino clears 4 lines
             console.log(game.score.score,expectedScore);
             if (game.score.score !== expectedScore) {
                 throw new Error("Hard drop should score 2 points per cell descended");
